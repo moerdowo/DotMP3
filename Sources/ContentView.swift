@@ -5,6 +5,7 @@ struct ContentView: View {
     @EnvironmentObject var engine: AudioEngine
     @State private var dropTargeted = false
     @State private var draggingIndex: Int? = nil
+    @State private var showPlaylist = true
 
     var body: some View {
         VStack(spacing: Theme.grid) {
@@ -14,10 +15,14 @@ struct ContentView: View {
                     nowPlaying
                     transport
                 }
-                playlistPanel
-                    .frame(width: 320)
+                if showPlaylist {
+                    playlistPanel
+                        .frame(width: 320)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
         }
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: showPlaylist)
         .padding(Theme.grid)
         .background(Theme.bg)
         .focusEffectDisabled()
@@ -46,6 +51,7 @@ struct ContentView: View {
             Text("AUDIO · TELEMETRY")
                 .font(.mono(9)).tracking(3).foregroundStyle(Theme.inkFaint)
             statusDot
+            GridToggle(on: $showPlaylist)
         }
         .frame(height: 28)
     }
@@ -240,6 +246,39 @@ struct Scrubber: View {
                 onSeek(Double(f) * total)
             })
         }
+    }
+}
+
+// Grid-style toggle for the playlist: solid orange when hidden, white grid on dark when shown.
+struct GridToggle: View {
+    @Binding var on: Bool
+    var body: some View {
+        Button { on.toggle() } label: {
+            Canvas { ctx, size in
+                let n = 3
+                let pad = size.width * 0.22
+                let span = size.width - pad * 2
+                let cell = span / CGFloat(n)
+                let s = cell * 0.62
+                let cellColor: Color = on ? .white : Theme.orange   // blends into orange bg when off
+                for r in 0..<n {
+                    for c in 0..<n {
+                        let cx = pad + cell * (CGFloat(c) + 0.5)
+                        let cy = pad + cell * (CGFloat(r) + 0.5)
+                        ctx.fill(Path(roundedRect: CGRect(x: cx - s/2, y: cy - s/2, width: s, height: s),
+                                      cornerRadius: s * 0.28),
+                                 with: .color(cellColor))
+                    }
+                }
+            }
+            .frame(width: 26, height: 26)
+            .background(on ? Theme.panel : Theme.orange)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Theme.panelStroke, lineWidth: on ? 1 : 0))
+        }
+        .buttonStyle(.plain)
+        .help(on ? "Hide queue" : "Show queue")
     }
 }
 
