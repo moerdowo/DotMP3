@@ -8,6 +8,7 @@ enum Theme {
     static let panelStroke = Color.white.opacity(0.06)
     static let dotOn       = Color(red: 0.92, green: 0.92, blue: 0.93)     // lit dot
     static let dotOff      = Color.white.opacity(0.055)                    // unlit dot ghost
+    static let pixelOff    = Color.white.opacity(0.10)                     // unlit pixel cell
     static let ink         = Color(red: 0.86, green: 0.86, blue: 0.87)
     static let inkDim      = Color.white.opacity(0.42)
     static let inkFaint    = Color.white.opacity(0.22)
