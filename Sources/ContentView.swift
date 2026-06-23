@@ -28,7 +28,14 @@ struct ContentView: View {
     private var header: some View {
         HStack(alignment: .center) {
             DotText(text: "DOTMP3", dot: 2.4, gap: 1.4, spacing: 3, color: Theme.dotOn)
-            Rectangle().fill(Theme.red).frame(width: 5, height: 5)   // brand red, exactly once
+            // brand red, exactly once — blinks while playing
+            TimelineView(.periodic(from: .now, by: 0.45)) { tl in
+                let on = Int(tl.date.timeIntervalSinceReferenceDate / 0.45) % 2 == 0
+                Rectangle()
+                    .fill(Theme.red)
+                    .frame(width: 5, height: 5)
+                    .opacity(engine.isPlaying ? (on ? 1 : 0.12) : 1)
+            }
             Spacer()
             Text("AUDIO · TELEMETRY")
                 .font(.mono(9)).tracking(3).foregroundStyle(Theme.inkFaint)
