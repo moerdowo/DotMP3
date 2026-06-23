@@ -46,6 +46,7 @@ final class AudioEngine: ObservableObject {
     private var sampleRate: Double = 44100
     private var totalFrames: AVAudioFramePosition = 0
     private var seekFrame: AVAudioFramePosition = 0     // where current schedule started
+    private var scheduleToken = 0                       // invalidates stale completion callbacks
     private var displayTimer: Timer?
 
     // FFT
@@ -292,18 +293,22 @@ final class AudioEngine: ObservableObject {
         guard let file else { return }
         let remaining = totalFrames - frame
         guard remaining > 0 else { return }
+        scheduleToken &+= 1
+        let token = scheduleToken
         file.framePosition = frame
         player.scheduleSegment(file, startingFrame: frame,
                                frameCount: AVAudioFrameCount(remaining),
-                               at: nil) { [weak self] in
-            Task { @MainActor in self?.handleSegmentEnd() }
+                               at: nil,
+                               completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            Task { @MainActor in self?.handleSegmentEnd(token: token) }
         }
     }
 
-    private func handleSegmentEnd() {
-        // Fired when the scheduled buffer drains. Only treat as track-end if we're near the end.
+    private func handleSegmentEnd(token: Int) {
+        // .dataPlayedBack fires when the segment has actually finished playing.
+        guard token == scheduleToken else { return }   // stale: a seek/load replaced this segment
         guard isPlaying else { return }
-        if currentTime >= duration - 0.5 { advance(auto: true) }
+        advance(auto: true)
     }
 
     private func stopEngineOnly() {
