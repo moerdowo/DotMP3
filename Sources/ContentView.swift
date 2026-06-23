@@ -3,6 +3,8 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @EnvironmentObject var engine: AudioEngine
+    @State private var dropTargeted = false
+    @State private var draggingIndex: Int? = nil
 
     var body: some View {
         VStack(spacing: Theme.grid) {
@@ -19,6 +21,10 @@ struct ContentView: View {
         .padding(Theme.grid)
         .background(Theme.bg)
         .focusEffectDisabled()
+        .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers in
+            engine.add(providers: providers)
+            return true
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openFiles)) { _ in openFiles() }
         .onAppear { NSWindow.allowsAutomaticWindowTabbing = false }
     }
@@ -134,12 +140,26 @@ struct ContentView: View {
                     LazyVStack(spacing: 2) {
                         ForEach(Array(engine.playlist.enumerated()), id: \.element.id) { idx, track in
                             row(idx: idx, track: track)
+                                .onDrag {
+                                    draggingIndex = idx
+                                    return NSItemProvider(object: String(idx) as NSString)
+                                }
+                                .onDrop(of: [UTType.text], delegate: ReorderDelegate(
+                                    target: idx, dragging: $draggingIndex, engine: engine))
                         }
                     }
                 }
             }
         }
         .frame(maxHeight: .infinity)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Theme.orange, lineWidth: dropTargeted ? 2 : 0)
+        )
+        .onDrop(of: [UTType.fileURL], isTargeted: $dropTargeted) { providers in
+            engine.add(providers: providers)
+            return true
+        }
     }
 
     private func row(idx: Int, track: Track) -> some View {
@@ -221,6 +241,22 @@ struct Scrubber: View {
             })
         }
     }
+}
+
+// Live row reorder while dragging within the queue.
+struct ReorderDelegate: DropDelegate {
+    let target: Int
+    @Binding var dragging: Int?
+    let engine: AudioEngine
+
+    func dropEntered(info: DropInfo) {
+        guard let from = dragging, from != target else { return }
+        engine.move(from: from, to: target)
+        dragging = target
+    }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+    func performDrop(info: DropInfo) -> Bool { dragging = nil; return true }
+    func dropExited(info: DropInfo) {}
 }
 
 struct VolumeDots: View {

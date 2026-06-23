@@ -73,6 +73,34 @@ final class AudioEngine: ObservableObject {
         for t in added { loadMetadata(for: t) }
     }
 
+    // Reorder the queue, keeping the playing track's index in sync.
+    func move(from: Int, to: Int) {
+        guard from != to, playlist.indices.contains(from) else { return }
+        let curId = currentTrack?.id
+        let item = playlist.remove(at: from)
+        let dest = max(0, min(playlist.count, to))
+        playlist.insert(item, at: dest)
+        if let curId { currentIndex = playlist.firstIndex { $0.id == curId } }
+    }
+
+    // Add tracks from dropped Finder item providers (file URLs).
+    func add(providers: [NSItemProvider]) {
+        let group = DispatchGroup()
+        var urls: [URL] = []
+        let lock = NSLock()
+        for p in providers where p.canLoadObject(ofClass: URL.self) {
+            group.enter()
+            _ = p.loadObject(ofClass: URL.self) { url, _ in
+                if let url { lock.lock(); urls.append(url); lock.unlock() }
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) { [weak self] in
+            let sorted = urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+            self?.add(urls: sorted)
+        }
+    }
+
     private func makeTrack(_ url: URL) -> Track {
         var dur: Double = 0
         if let f = try? AVAudioFile(forReading: url) {
