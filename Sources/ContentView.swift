@@ -18,6 +18,7 @@ struct ContentView: View {
         }
         .padding(Theme.grid)
         .background(Theme.bg)
+        .focusEffectDisabled()
         .onReceive(NotificationCenter.default.publisher(for: .openFiles)) { _ in openFiles() }
         .onAppear { NSWindow.allowsAutomaticWindowTabbing = false }
     }
@@ -53,8 +54,8 @@ struct ContentView: View {
             HStack(spacing: 16) {
                 artwork
                 VStack(alignment: .leading, spacing: 12) {
-                    DotText(text: shortened(engine.currentTrack?.title ?? "NO SIGNAL", 14),
-                            dot: 5, gap: 2, color: Theme.dotOn)
+                    DotText(text: shortened(engine.currentTrack?.title ?? "NO SIGNAL", 16),
+                            dot: 3.6, gap: 1.8, spacing: 4, color: Theme.dotOn)
                     Text((engine.currentTrack?.artist ?? "—").uppercased())
                         .font(.grotesk(13, .semibold)).foregroundStyle(Theme.ink)
                     Text((engine.currentTrack?.album ?? "—").uppercased())
