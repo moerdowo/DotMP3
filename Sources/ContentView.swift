@@ -109,8 +109,8 @@ struct ContentView: View {
                         engine.togglePlay()
                     }
                     GlyphButton(kind: .next) { engine.next() }
-                    ModeButton(label: "SHUF", active: engine.shuffle) { engine.shuffle.toggle() }
-                    ModeButton(label: repeatLabel, active: engine.repeatMode != .off) { engine.cycleRepeat() }
+                    ModeButton(label: "SHUF", active: engine.shuffle, width: 42) { engine.shuffle.toggle() }
+                    ModeButton(label: repeatLabel, active: engine.repeatMode != .off, width: 52) { engine.cycleRepeat() }
                     Spacer()
                     volume
                 }
@@ -123,8 +123,9 @@ struct ContentView: View {
         HStack(spacing: 10) {
             Text("VOL").font(.mono(9)).tracking(2).foregroundStyle(Theme.inkFaint)
             VolumeDots(value: $engine.volume)
-                .frame(width: 124, height: 8)
+                .frame(width: 104, height: 8)
         }
+        .fixedSize()        // never let the controls row truncate the volume
     }
 
     // MARK: Playlist
@@ -264,13 +265,15 @@ struct Scrubber: View {
 struct ModeButton: View {
     let label: String
     let active: Bool
+    var width: CGFloat = 40
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             Text(label)
                 .font(.mono(8, .bold)).tracking(0.5)
                 .foregroundStyle(active ? .white : Theme.inkFaint)
-                .padding(.horizontal, 7).padding(.vertical, 6)
+                .lineLimit(1).fixedSize()
+                .frame(width: width, height: 28)
                 .background((active ? Theme.orange : Color.clear).opacity(active ? 0.18 : 0))
                 .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .stroke(active ? Theme.orange : Theme.panelStroke, lineWidth: 1))
