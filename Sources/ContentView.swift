@@ -26,8 +26,8 @@ struct ContentView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            DotText(text: "DOTMP3", dot: 4, gap: 2, color: Theme.dotOn)
-            Rectangle().fill(Theme.red).frame(width: 7, height: 7)   // brand red, exactly once
+            DotText(text: "DOTMP3", dot: 2.4, gap: 1.4, spacing: 3, color: Theme.dotOn)
+            Rectangle().fill(Theme.red).frame(width: 5, height: 5)   // brand red, exactly once
             Spacer()
             Text("AUDIO · TELEMETRY")
                 .font(.mono(9)).tracking(3).foregroundStyle(Theme.inkFaint)
