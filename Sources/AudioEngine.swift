@@ -263,10 +263,12 @@ final class AudioEngine: ObservableObject {
             let a = max(minBin, lo), z = max(a + 1, min(half, hi))
             var sum: Float = 0
             for i in a..<z { sum += magnitudes[i] }
-            let avg = sum / Float(z - a)
-            // log scaling to dB-ish
-            let db = 10 * log10f(avg + 1e-9)
-            let norm = max(0, min(1, (db + 50) / 50))
+            let meanPower = sum / Float(z - a)
+            // Normalize to ~0...1 amplitude (zvmags is unscaled power for an N-pt zrip FFT).
+            let amp = sqrtf(meanPower) * 2 / Float(fftSize)
+            let db = 20 * log10f(amp + 1e-7)
+            // Map a -58dB...-12dB window onto the meter so peaks rarely peg.
+            let norm = max(0, min(1, (db + 58) / 46))
             out[b] = norm
         }
 
