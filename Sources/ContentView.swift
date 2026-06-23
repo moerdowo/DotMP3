@@ -51,49 +51,21 @@ struct ContentView: View {
 
     private var nowPlaying: some View {
         Panel(label: "Now Playing") {
-            HStack(spacing: 16) {
-                artwork
-                VStack(alignment: .leading, spacing: 12) {
-                    DotText(text: shortened(engine.currentTrack?.title ?? "NO SIGNAL", 16),
-                            dot: 3.6, gap: 1.8, spacing: 4, color: Theme.dotOn)
-                    Text((engine.currentTrack?.artist ?? "—").uppercased())
-                        .font(.grotesk(13, .semibold)).foregroundStyle(Theme.ink)
-                    Text((engine.currentTrack?.album ?? "—").uppercased())
-                        .font(.mono(10)).tracking(1).foregroundStyle(Theme.inkDim)
-                    Spacer()
-                    SpectrumView(bands: engine.bands, rows: 8, active: engine.isPlaying)
-                        .frame(height: 76)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 12) {
+                DotText(text: shortened(engine.currentTrack?.title ?? "NO SIGNAL", 16),
+                        dot: 3.6, gap: 1.8, spacing: 4, color: Theme.dotOn)
+                Text((engine.currentTrack?.artist ?? "—").uppercased())
+                    .font(.grotesk(13, .semibold)).foregroundStyle(Theme.ink)
+                Text((engine.currentTrack?.album ?? "—").uppercased())
+                    .font(.mono(10)).tracking(1).foregroundStyle(Theme.inkDim)
+                Spacer()
+                SpectrumView(bands: engine.bands, rows: 8, active: engine.isPlaying)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 96)
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
         .frame(maxHeight: .infinity)
-    }
-
-    private var artwork: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Theme.bg)
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.panelStroke))
-            if let img = engine.currentTrack?.artwork {
-                Image(nsImage: img).resizable().aspectRatio(contentMode: .fill)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            } else {
-                // dot-grid placeholder
-                Canvas { ctx, size in
-                    let step: CGFloat = 12
-                    var y: CGFloat = step/2
-                    while y < size.height { var x: CGFloat = step/2
-                        while x < size.width {
-                            ctx.fill(Path(ellipseIn: CGRect(x: x-1.5, y: y-1.5, width: 3, height: 3)),
-                                     with: .color(Theme.dotOff))
-                            x += step }
-                        y += step }
-                }
-            }
-        }
-        .frame(width: 150, height: 150)
     }
 
     // MARK: Transport
