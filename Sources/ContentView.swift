@@ -171,30 +171,31 @@ struct ContentView: View {
 
     private func row(idx: Int, track: Track) -> some View {
         let isCur = engine.currentIndex == idx
-        return Button {
-            engine.load(index: idx, autoplay: true)
-        } label: {
-            HStack(spacing: 10) {
-                if isCur {
-                    Rectangle().fill(Theme.red).frame(width: 3, height: 26)
-                } else {
-                    Text(String(format: "%02d", idx + 1))
-                        .font(.mono(10)).foregroundStyle(Theme.inkFaint).frame(width: 18)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(track.title).font(.grotesk(12, .medium)).lineLimit(1)
-                        .foregroundStyle(isCur ? Theme.dotOn : Theme.ink)
-                    Text(track.artist.uppercased()).font(.mono(9)).tracking(1)
-                        .foregroundStyle(Theme.inkDim).lineLimit(1)
-                }
-                Spacer()
-                Text(fmt(track.duration)).font(.mono(10)).foregroundStyle(Theme.inkFaint)
+        let isSel = engine.selectedIndex == idx
+        return HStack(spacing: 10) {
+            if isCur {
+                Rectangle().fill(Theme.red).frame(width: 3, height: 26)
+            } else {
+                Text(String(format: "%02d", idx + 1))
+                    .font(.mono(10)).foregroundStyle(Theme.inkFaint).frame(width: 18)
             }
-            .padding(.horizontal, 8).padding(.vertical, 7)
-            .background(isCur ? Theme.bg : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.title).font(.grotesk(12, .medium)).lineLimit(1)
+                    .foregroundStyle(isCur || isSel ? Theme.dotOn : Theme.ink)
+                Text(track.artist.uppercased()).font(.mono(9)).tracking(1)
+                    .foregroundStyle(Theme.inkDim).lineLimit(1)
+            }
+            Spacer()
+            Text(fmt(track.duration)).font(.mono(10)).foregroundStyle(Theme.inkFaint)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 8).padding(.vertical, 7)
+        .background(isSel ? Theme.bg : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6)
+            .stroke(Theme.panelStroke, lineWidth: isSel ? 1 : 0))
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) { engine.play(index: idx) }
+        .onTapGesture(count: 1) { engine.select(idx) }
     }
 
     // MARK: Helpers

@@ -19,7 +19,8 @@ struct Track: Identifiable, Equatable {
 @MainActor
 final class AudioEngine: ObservableObject {
     @Published var playlist: [Track] = []
-    @Published var currentIndex: Int? = nil
+    @Published var currentIndex: Int? = nil    // track loaded in the player
+    @Published var selectedIndex: Int? = nil   // highlighted row (single-click)
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
@@ -82,6 +83,19 @@ final class AudioEngine: ObservableObject {
         }
         for t in added { loadMetadata(for: t) }
         persist()
+    }
+
+    // Single-click: just highlight the row.
+    func select(_ index: Int) {
+        guard playlist.indices.contains(index) else { return }
+        selectedIndex = index
+    }
+
+    // Double-click: load and play.
+    func play(index: Int) {
+        guard playlist.indices.contains(index) else { return }
+        selectedIndex = index
+        load(index: index, autoplay: true)
     }
 
     // Reorder the queue, keeping the playing track's index in sync.
