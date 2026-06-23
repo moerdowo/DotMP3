@@ -108,7 +108,7 @@ struct ContentView: View {
         HStack(spacing: 10) {
             Text("VOL").font(.mono(9)).tracking(2).foregroundStyle(Theme.inkFaint)
             VolumeDots(value: $engine.volume)
-                .frame(width: 168, height: 14)
+                .frame(width: 124, height: 8)
         }
     }
 
