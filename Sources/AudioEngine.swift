@@ -270,6 +270,20 @@ final class AudioEngine: ObservableObject {
         load(index: p, autoplay: true)
     }
 
+    func clear() {
+        stopEngineOnly()
+        isPlaying = false
+        file = nil
+        playlist.removeAll()
+        currentIndex = nil
+        selectedIndex = nil
+        currentTime = 0
+        duration = 0
+        bands = bands.map { _ in 0 }
+        level = 0
+        persist()
+    }
+
     func remove(at index: Int) {
         guard playlist.indices.contains(index) else { return }
         let wasCurrent = currentIndex == index

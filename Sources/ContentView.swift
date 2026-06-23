@@ -131,7 +131,20 @@ struct ContentView: View {
     // MARK: Playlist
 
     private var playlistPanel: some View {
-        Panel(label: "Queue · \(engine.playlist.count)") {
+        Panel {
+            HStack {
+                Text("QUEUE · \(engine.playlist.count)")
+                    .font(.mono(9)).tracking(2.2).foregroundStyle(Theme.inkFaint)
+                Spacer()
+                if !engine.playlist.isEmpty {
+                    Button { engine.clear() } label: {
+                        Text("CLEAR").font(.mono(9, .bold)).tracking(1.5)
+                            .foregroundStyle(Theme.inkDim)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Remove all songs")
+                }
+            }
             if engine.playlist.isEmpty {
                 VStack(spacing: 14) {
                     Spacer()
