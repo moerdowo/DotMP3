@@ -11,6 +11,7 @@ struct Track: Identifiable, Equatable {
     var album: String
     var duration: Double
     var artwork: NSImage?
+    var bookmark: Data?      // security-scoped bookmark for cross-launch access
 
     static func == (a: Track, b: Track) -> Bool { a.id == b.id }
 }
@@ -22,7 +23,9 @@ final class AudioEngine: ObservableObject {
     @Published var isPlaying = false
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
-    @Published var volume: Float = 0.8 { didSet { mixer.outputVolume = volume } }
+    @Published var volume: Float = 0.8 {
+        didSet { mixer.outputVolume = volume; UserDefaults.standard.set(volume, forKey: Keys.volume) }
+    }
     @Published var bands: [Float] = Array(repeating: 0, count: 16)
     @Published var level: Float = 0          // overall RMS level 0...1
     @Published var levels: [Float] = []      // rolling history of level for the waveform
@@ -53,6 +56,13 @@ final class AudioEngine: ObservableObject {
         fftSetup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2))
         window = [Float](repeating: 0, count: fftSize)
         vDSP_hann_window(&window, vDSP_Length(fftSize), Int32(vDSP_HANN_NORM))
+        restore()
+    }
+
+    private enum Keys {
+        static let bookmarks = "DotMP3.bookmarks"
+        static let currentIndex = "DotMP3.currentIndex"
+        static let volume = "DotMP3.volume"
     }
 
     deinit { if let s = fftSetup { vDSP_destroy_fftsetup(s) } }
@@ -71,6 +81,7 @@ final class AudioEngine: ObservableObject {
             load(index: idx, autoplay: false)
         }
         for t in added { loadMetadata(for: t) }
+        persist()
     }
 
     // Reorder the queue, keeping the playing track's index in sync.
@@ -81,6 +92,34 @@ final class AudioEngine: ObservableObject {
         let dest = max(0, min(playlist.count, to))
         playlist.insert(item, at: dest)
         if let curId { currentIndex = playlist.firstIndex { $0.id == curId } }
+        persist()
+    }
+
+    // MARK: - Persistence
+
+    private func persist() {
+        let bms = playlist.compactMap { $0.bookmark }
+        UserDefaults.standard.set(bms, forKey: Keys.bookmarks)
+        UserDefaults.standard.set(currentIndex ?? -1, forKey: Keys.currentIndex)
+    }
+
+    private func restore() {
+        if UserDefaults.standard.object(forKey: Keys.volume) != nil {
+            volume = UserDefaults.standard.float(forKey: Keys.volume)
+        }
+        guard let bms = UserDefaults.standard.array(forKey: Keys.bookmarks) as? [Data] else { return }
+        var restored: [Track] = []
+        for bm in bms {
+            var stale = false
+            guard let url = try? URL(resolvingBookmarkData: bm, options: .withSecurityScope,
+                                     relativeTo: nil, bookmarkDataIsStale: &stale) else { continue }
+            guard url.startAccessingSecurityScopedResource() else { continue }
+            restored.append(makeTrack(url))
+        }
+        playlist = restored
+        let savedIdx = UserDefaults.standard.integer(forKey: Keys.currentIndex)
+        if playlist.indices.contains(savedIdx) { load(index: savedIdx, autoplay: false) }
+        for t in restored { loadMetadata(for: t) }
     }
 
     // Add tracks from dropped Finder item providers (file URLs).
@@ -106,8 +145,10 @@ final class AudioEngine: ObservableObject {
         if let f = try? AVAudioFile(forReading: url) {
             dur = Double(f.length) / f.processingFormat.sampleRate
         }
+        let bm = try? url.bookmarkData(options: .withSecurityScope,
+                                       includingResourceValuesForKeys: nil, relativeTo: nil)
         return Track(url: url, title: url.deletingPathExtension().lastPathComponent,
-                     artist: "—", album: "—", duration: dur, artwork: nil)
+                     artist: "—", album: "—", duration: dur, artwork: nil, bookmark: bm)
     }
 
     private func loadMetadata(for track: Track) {
