@@ -69,7 +69,10 @@ struct ContentView: View {
                 Spacer()
                 SpectrumView(bands: engine.bands, rows: 8, active: engine.isPlaying)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 96)
+                    .frame(height: 84)
+                WaveHistory(levels: engine.levels, capacity: engine.levelCapacity)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }

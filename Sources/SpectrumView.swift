@@ -29,6 +29,31 @@ struct SpectrumView: View {
     }
 }
 
+// Rolling waveform of level history — vertical bars, newest at the right (orange playhead).
+struct WaveHistory: View {
+    let levels: [Float]
+    let capacity: Int
+
+    var body: some View {
+        Canvas { ctx, size in
+            guard capacity > 0 else { return }
+            let cw = size.width / CGFloat(capacity)
+            let bw = cw * 0.5
+            let radius = bw * 0.4
+            let offset = capacity - levels.count        // right-align newest
+            for (idx, lv) in levels.enumerated() {
+                let i = offset + idx
+                let x = (CGFloat(i) + 0.5) * cw
+                let h = max(2, CGFloat(min(1, lv)) * size.height)
+                let last = idx == levels.count - 1
+                let rect = CGRect(x: x - bw/2, y: (size.height - h) / 2, width: bw, height: h)
+                ctx.fill(Path(roundedRect: rect, cornerRadius: radius),
+                         with: .color(last ? Theme.orange : Theme.dotOn))
+            }
+        }
+    }
+}
+
 // A small dot-matrix glyph button (play/pause/next/prev) drawn on a dot grid.
 struct GlyphButton: View {
     enum Kind { case play, pause, next, prev }

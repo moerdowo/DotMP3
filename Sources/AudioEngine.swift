@@ -25,6 +25,9 @@ final class AudioEngine: ObservableObject {
     @Published var volume: Float = 0.8 { didSet { mixer.outputVolume = volume } }
     @Published var bands: [Float] = Array(repeating: 0, count: 16)
     @Published var level: Float = 0          // overall RMS level 0...1
+    @Published var levels: [Float] = []      // rolling history of level for the waveform
+    let levelCapacity = 44
+    private var tickCount = 0
 
     var currentTrack: Track? { currentIndex.flatMap { playlist.indices.contains($0) ? playlist[$0] : nil } }
 
@@ -120,6 +123,7 @@ final class AudioEngine: ObservableObject {
         duration = Double(totalFrames) / sampleRate
         currentTime = 0
         seekFrame = 0
+        levels.removeAll()
         installTap()
         scheduleSegment(from: 0)
         if autoplay { play() } else { isPlaying = false }
@@ -212,6 +216,13 @@ final class AudioEngine: ObservableObject {
               let playerTime = player.playerTime(forNodeTime: nodeTime) else { return }
         let played = Double(playerTime.sampleTime) / playerTime.sampleRate
         currentTime = min(duration, Double(seekFrame) / sampleRate + max(0, played))
+
+        // Sample the level into the rolling waveform history (~7.5 Hz).
+        tickCount += 1
+        if tickCount % 4 == 0 {
+            levels.append(level)
+            if levels.count > levelCapacity { levels.removeFirst(levels.count - levelCapacity) }
+        }
     }
 
     // MARK: - FFT spectrum
